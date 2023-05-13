@@ -1,93 +1,3582 @@
-openapi: 3.0.1
+---
+openapi: 3.0.0
+tags:
+- description: An activity object allows to keep track of all activity related information.
+  name: Activities
+- description: A contact object allows to keep track of all contact related information.
+  name: Contacts
+- description: Custom fields allows to extend contacts information.
+  name: Custom fields
+- description: A deal object allows to keep track of all deal related information.
+  name: Deals
+- description: Pipelines allows to defined different flows for the deals.
+  name: Pipelines
+- description: Tags are used to mark contacts for easy classification.
+  name: Tags
+- description: A task object allows to keep track of all tasks related information.
+  name: Tasks
+- description: User module.
+  name: Users
 info:
-  title: TODO Plugin
-  description: A plugin that allows the user to create and manage a TODO list using ChatGPT. If you do not know the user's username, ask them first before making queries to the plugin. Otherwise, use the username "global".
-  version: 'v1'
-servers:
-  - url: http://localhost:5003
+  contact:
+    email: tech@escala.com
+    name: Escala
+    url: https://www.escala.com
+  description: "\n\n# Introduction\nThis API is documented in **OpenAPI format**.\n\n#
+    Cross-Origin Resource Sharing\nThis API features Cross-Origin Resource Sharing
+    (CORS) implemented in compliance with  [W3C spec](https://www.w3.org/TR/cors/).\nAnd
+    that allows cross-domain communication from the browser.\nAll responses have a
+    wildcard same-origin which makes them completely public and accessible to everyone,
+    including any code on any site.\n\n# Authentication\n\nEscala offers one form
+    of authentication:\n- API Key\n\n<SecurityDefinitions />\n\n# Errors & Rate Limits\n\nEscala
+    uses conventional HTTP response codes to indicate the success or failure of an
+    API request. In general: Codes in the 2xx range indicate success. Codes in the
+    4xx range indicate an error that failed given the information provided (e.g.,
+    a required parameter was omitted, etc.). Codes in the 5xx range indicate an error
+    in the Escala end (these are rare).\n\n| HTTP Code  |  Description |\n|---|---|\n|
+    200 | Everything worked as expected. |\n| 201 | The resource was created. |\n|
+    400 | Bad request, the input parameters are not valid. |\n| 401 | No valid API
+    key provided. |\n| 404 | The resource does not exists. |\n| 412 | This code is
+    used to indicated if another resource exists with the same key field, like email
+    or tag name. |\n| 429 | Too many requests. |\n| 500 | Something went wrong on
+    Escala's end. (These are rare.) |\n\nIf you call too frequently, you may run into
+    the rate limit or see the error 429.\n\n| Limits |   | |\n|---|---|---|\n| Rate
+    | 15/sec | The average number of requests per second over and extended period
+    of time. |\n| Daily | 500.000 | Maximun number of daily requests, this value is
+    reset every day at UTC 00:00:00. |\n\n                    "
+  termsOfService: https://escala.com/terminos-de-servicio
+  title: Escala Public API
+  version: v1
+  x-logo:
+    url: https://cdn2.dev.exitoweb.com/assets/images/escala_dark.svg
+  summary: 'Last updated: August 24, 2022 at 16:00 UTC'
 paths:
-  /todos/{username}:
+  "/v1/crm/activities":
     get:
-      operationId: getTodos
-      summary: Get the list of todos
       parameters:
-      - in: path
-        name: username
+      - description: Search activities by type.
+        in: query
+        name: type
+        required: false
         schema:
-            type: string
-        required: true
-        description: The name of the user.
+          type: string
+          enum:
+          - event
+          - webinar
+          - meeting
+          - call
+          - other
+      - description: Search activities by status.
+        in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - pending
+          - completed
+          - discarded
+      - description: Search by activity's owner. Pass the owner's email.
+        in: query
+        name: assignedTo
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - title
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
       responses:
-        "200":
-          description: OK
+        '200':
+          description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getTodosResponse'
+                "$ref": "#/components/schemas/SearchActivityResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search activities"
+      tags:
+      - Activities
     post:
-      operationId: addTodo
-      summary: Add a todo to the list
-      parameters:
-      - in: path
-        name: username
-        schema:
-            type: string
-        required: true
-        description: The name of the user.
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/addTodoRequest'
+              "$ref": "#/components/schemas/CreateActivityRequest"
+        description: Payload to create a new activity. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
       responses:
-        "200":
-          description: OK
+        '201':
+          description: Activity created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create activity
+      tags:
+      - Activities
+  "/v1/crm/contacts":
+    get:
+      parameters:
+      - description: Full text search over first name, last name and email fields.
+        in: query
+        name: text
+        required: false
+        schema:
+          type: string
+      - description: Search by email field, exact match.
+        in: query
+        name: email
+        required: false
+        schema:
+          type: string
+      - description: Search by contact's owner. Pass the owner's email.
+        in: query
+        name: assignedTo
+        required: false
+        schema:
+          type: string
+      - description: Search using the filters defined in a segment. Pass the segments'
+          id.
+        in: query
+        name: segment
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - contact.firstName
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchContactResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search contacts"
+      tags:
+      - Contacts
+    post:
+      description: <br/>The fields *"email"* and *"phone number"* are not required
+        individually, but you MUST pass one of them to check for duplicity.<br/>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateContactRequest"
+        description: Payload to create a new contact. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '201':
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '412':
+          description: Contact with the same key field exists
+          content:
+            application/json:
+              schema:
+                properties:
+                  fields:
+                    description: Existing field names
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    description: Existing contact id
+                    type: string
+                  message:
+                    type: string
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create contact
+      tags:
+      - Contacts
+  "/v1/crm/contacts/upsert":
+    post:
+      description: <br/>The fields *"email"* and *"phone number"* are not required
+        individually, but you MUST pass one of them to check for duplicity.<br/>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateOrUpdateContactRequest"
+        description: Payload to create new contact or update an existing contact using
+          the email/phone number as possible keys. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '200':
+          description: Contact updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityUpdatedResponse"
+        '201':
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '412':
+          description: Contact with the same key field exists
+          content:
+            application/json:
+              schema:
+                properties:
+                  fields:
+                    description: Existing field names
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    description: Existing contact id
+                    type: string
+                  message:
+                    type: string
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create or update contact
+      tags:
+      - Contacts
+  "/v1/crm/contacts/{id}":
     delete:
-      operationId: deleteTodo
-      summary: Delete a todo from the list
       parameters:
-      - in: path
-        name: username
+      - description: Contact ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
         schema:
-            type: string
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      - description: By default no workflow will be triggered for this operation.
+          To trigger workflow associated, pass this parameter with *true*.
+        in: query
+        name: triggerWorkflow
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Contact deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityDeletedResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Delete contact"
+      tags:
+      - Contacts
+    get:
+      parameters:
+      - description: Contact ID. Pass a valid UUID.
+        in: path
+        name: id
         required: true
-        description: The name of the user.
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityContactResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Get contact"
+      tags:
+      - Contacts
+    put:
+      parameters:
+      - description: Contact ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/deleteTodoRequest'
+              "$ref": "#/components/schemas/UpdateContactRequest"
+        description: Payload to update an existing contact. It is not allowed to pass
+          *null* field values. The API will respond with a 400 status code if you
+          do. Send only the fields that have a value different from *null*.
       responses:
-        "200":
-          description: OK
-
+        '200':
+          description: Contact updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityUpdatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '412':
+          description: Contact with the same key field exists
+          content:
+            application/json:
+              schema:
+                properties:
+                  fields:
+                    description: Existing field names
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    description: Existing contact id
+                    type: string
+                  message:
+                    type: string
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Update contact"
+      tags:
+      - Contacts
+  "/v1/crm/contacts/{id}/tags":
+    put:
+      parameters:
+      - description: Contact ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateContactTagsRequest"
+        description: Payload to update contact tags. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '200':
+          description: Contact tags updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityUpdatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Update contact tags"
+      tags:
+      - Contacts
+  "/v1/crm/custom-fields":
+    get:
+      parameters:
+      - description: Search custom fields by name.
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchCustomFieldResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search custom fields"
+      tags:
+      - Custom fields
+  "/v1/crm/deals":
+    get:
+      parameters:
+      - description: Full text search over deal name, contact first name and contact
+          last name fields.
+        in: query
+        name: text
+        required: false
+        schema:
+          type: string
+      - description: Search by pipeline. Pass the pipeline ID.
+        in: query
+        name: pipeline
+        required: false
+        schema:
+          type: string
+      - description: Search by product. Pass the product ID.
+        in: query
+        name: product
+        required: false
+        schema:
+          type: string
+      - description: Search by stage type.
+        in: query
+        name: stageType
+        required: false
+        schema:
+          type: string
+          enum:
+          - open
+          - won
+          - lost
+      - description: Search by stage. Pass the stage ID.
+        in: query
+        name: stageId
+        required: false
+        schema:
+          type: string
+      - description: Search by deals's owner. Pass the owner's email.
+        in: query
+        name: assignedTo
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchDealResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search deals"
+      tags:
+      - Deals
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateDealRequest"
+        description: Payload to create a new deal. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '201':
+          description: Deal created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create deal
+      tags:
+      - Deals
+  "/v1/crm/deals/{id}":
+    delete:
+      parameters:
+      - description: Deal ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      - description: By default no workflow will be triggered for this operation.
+          To trigger workflow associated, pass this parameter with *true*.
+        in: query
+        name: triggerWorkflow
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Deal deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityDeletedResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Delete deal"
+      tags:
+      - Deals
+    get:
+      parameters:
+      - description: Deal ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityDealResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Get deal"
+      tags:
+      - Deals
+    put:
+      parameters:
+      - description: Deal ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateDealRequest"
+        description: Payload to update an existing deal. It is not allowed to pass
+          *null* field values. The API will respond with a 400 status code if you
+          do. Send only the fields that have a value different from *null*.
+      responses:
+        '200':
+          description: Deal updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityUpdatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Update deal
+      tags:
+      - Deals
+  "/v1/crm/deals/{id}/stage":
+    put:
+      parameters:
+      - description: Deal ID. Pass a valid UUID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateDealStageRequest"
+        description: Payload to update an existing deal stage. It is not allowed to
+          pass *null* field values. The API will respond with a 400 status code if
+          you do. Send only the fields that have a value different from *null*.
+      responses:
+        '200':
+          description: Deal updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityUpdatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ResourceNotFound"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Update deal stage
+      tags:
+      - Deals
+  "/v1/crm/pipelines":
+    get:
+      parameters:
+      - description: Search pipelines by name.
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - description: Search default pipeline.
+        in: query
+        name: type
+        required: false
+        schema:
+          type: string
+          enum:
+          - default
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchPipelineResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search pipelines"
+      tags:
+      - Pipelines
+  "/v1/crm/tags":
+    get:
+      parameters:
+      - description: Search tags by name.
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchTagResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search tags"
+      tags:
+      - Tags
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateTagRequest"
+        description: Payload to create a new tag. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '412':
+          description: Tag with the same name exists
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    description: Existing tag ID
+                    type: string
+                  message:
+                    type: string
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create tag
+      tags:
+      - Tags
+  "/v1/crm/tasks":
+    get:
+      parameters:
+      - description: Search tasks by status.
+        in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - pending
+          - completed
+      - description: Search by tasks's owner. Pass the owner's email.
+        in: query
+        name: assignedTo
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - title
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchTaskResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search tasks"
+      tags:
+      - Tasks
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateTaskRequest"
+        description: Payload to create a new task. It is not allowed to pass *null*
+          field values. The API will respond with a 400 status code if you do. Send
+          only the fields that have a value different from *null*.
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EntityCreatedResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: Create task
+      tags:
+      - Tasks
+  "/v1/customer/users":
+    get:
+      parameters:
+      - description: Search users by name.
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - description: Search user by email.
+        in: query
+        name: email
+        required: false
+        schema:
+          type: string
+      - description: Page number of the results.
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - description: Pages size of the result.
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+      - description: Sort field to sort by.
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+          enum:
+          - name
+          - created
+          - modified
+          default: modified
+      - description: Sort direction.
+        in: query
+        name: sortDir
+        required: false
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchUserResponse"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+      summary: "   Search users"
+      tags:
+      - Users
+security:
+- EscalaApiKey: []
+servers:
+- url: https://public-api.dev.exitoweb.com/
 components:
+  securitySchemes:
+    EscalaApiKey:
+      in: header
+      name: x-api-key
+      type: apiKey
   schemas:
-    getTodosResponse:
-      type: object
+    CreateActivityRequest:
+      description: Activity information
       properties:
-        todos:
-          type: array
+        assignedTo:
+          default: unassigned
+          description: Activity owner email
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        contactId:
+          description: Related contact ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        dealId:
+          description: Related deal ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        description:
+          description: Activity description
+          maximum: 4000
+          minimum: 1
+          type: string
+        duration:
+          description: Activity duration in minutes
+          maximum: 240
+          minimum: 15
+          type: integer
+        startAt:
+          description: Activity start date (yyyy-MM-ddThh:mm:ss)
+          pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+          type: string
+        status:
+          default: pending
+          description: Activity status
+          enum:
+          - pending
+          - completed
+          type: string
+        title:
+          description: Activity title
+          maximum: 256
+          minimum: 1
+          type: string
+        type:
+          description: Activity type
+          enum:
+          - event
+          - webinar
+          - meeting
+          - call
+          - other
+          type: string
+      required:
+      - title
+      - startAt
+      - duration
+      - contactId
+      - type
+      type: object
+    CreateContactRequest:
+      description: Contact information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Contact owner email
+          example: unassigned
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        company:
+          description: Company information
+          properties:
+            annualRevenue:
+              description: Company annual revenue
+              example: 10000000
+              type: integer
+            email:
+              description: Company email
+              example: company@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            industryType:
+              description: Company industry type
+              enum:
+              - agriculture
+              - construction
+              - education
+              - entertainment
+              - energy
+              - electronics
+              - financial
+              - food
+              - film
+              - government
+              - health
+              - insurance
+              - media
+              - manufacturing
+              - music
+              - mining
+              - petroleum
+              - real_estate
+              - software
+              - tourism
+              - transport
+              - telecommunication
+              - other
+              type: string
+            name:
+              description: Company name
+              example: Acme Inc
+              maximum: 256
+              minimum: 1
+              type: string
+            numberOfEmployees:
+              description: Company number of employees
+              example: 20
+              type: integer
+            phoneNumber:
+              description: Company phone number
+              example: '56912345678'
+              type: string
+            website:
+              description: Company website
+              example: https://acme.com
+              pattern: "^(https?:\\/\\/)?(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
+              type: string
+          type: object
+        contacted:
+          description: Contact contacted?
+          type: boolean
+        custom:
+          additionalProperties: true
+          description: Custom fields
+          example:
+            cf_age_number: 30
+            cf_name_text: Mark Johnson
+          type: object
+        notes:
+          description: Contact notes
+          example: Note
+          maximum: 4000
+          minimum: 1
+          type: string
+        personal:
+          description: Personal information
+          properties:
+            address:
+              description: Address street and number
+              example: 1234 Street
+              maximum: 256
+              minimum: 1
+              type: string
+            birthDay:
+              description: Contact birthday
+              example: 28
+              maximum: 31
+              minimum: 1
+              type: integer
+            birthMonth:
+              description: Contact birth month
+              example: 2
+              maximum: 12
+              minimum: 1
+              type: integer
+            birthYear:
+              description: Contact year of birth
+              example: 1998
+              maximum: 9999
+              minimum: 0
+              type: integer
+            city:
+              description: Address city name
+              example: City
+              maximum: 100
+              minimum: 1
+              type: string
+            country:
+              description: Address country name
+              example: USA
+              maximum: 256
+              minimum: 1
+              type: string
+            email:
+              description: Contact main email
+              example: contact@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            facebook:
+              description: Facebook user name or profile url
+              example: https://www.facebook.com/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            firstName:
+              description: Contact first name
+              example: Monica
+              maximum: 100
+              minimum: 1
+              type: string
+            instagram:
+              description: Instagram user name or profile url
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+            jobTitle:
+              description: Contact job title
+              example: Project Manager
+              maximum: 256
+              minimum: 1
+              type: string
+            lastName:
+              description: Contact last name
+              example: Geller
+              maximum: 100
+              minimum: 1
+              type: string
+            linkedIn:
+              description: LinkedIn user name or profile url
+              example: https://www.linkedin.com/in/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            phoneNumber:
+              description: Contact main phone number
+              example: '56912345678'
+              maximum: 256
+              minimum: 1
+              type: string
+            region:
+              description: Address region/province name
+              example: Region
+              maximum: 100
+              minimum: 1
+              type: string
+            secondaryPhoneNumber:
+              description: Contact secondary phone number
+              example: '56912345670'
+              maximum: 256
+              minimum: 1
+              type: string
+            state:
+              description: Address state name
+              example: State
+              maximum: 100
+              minimum: 1
+              type: string
+            twitter:
+              description: Twitter user name or profile link
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+          type: object
+        priority:
+          description: Contact priority
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          type: integer
+        source:
+          description: Contact source
+          enum:
+          - referrer
+          - other
+          type: string
+        status:
+          default: lead
+          description: Contact status
+          enum:
+          - lead
+          - client
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+      type: object
+    CreateDealRequest:
+      description: Deal information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Deal owner
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        contactId:
+          description: Related contact ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        description:
+          description: Deal description
+          maximum: 4000
+          minimum: 0
+          type: string
+        funnelId:
+          description: Related funnel ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        name:
+          description: Deal name
+          maximum: 256
+          minimum: 1
+          type: string
+        pipelineId:
+          description: Related pipeline ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        priority:
+          description: Deal priority
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          type: number
+        productId:
+          description: Related product ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        stageId:
+          description: Related stage ID
+          example: prospect
+          pattern: "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^(prospect|connected|qualified|proposed|won|lost)$)"
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+        value:
+          description: Deal amount value
+          type: number
+      required:
+      - name
+      - contactId
+      - pipelineId
+      - stageId
+      type: object
+    CreateOrUpdateContactRequest:
+      description: Contact information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Contact owner email
+          example: unassigned
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        company:
+          description: Company information
+          properties:
+            annualRevenue:
+              description: Company annual revenue
+              example: 10000000
+              type: integer
+            email:
+              description: Company email
+              example: company@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            industryType:
+              description: Company industry type
+              enum:
+              - agriculture
+              - construction
+              - education
+              - entertainment
+              - energy
+              - electronics
+              - financial
+              - food
+              - film
+              - government
+              - health
+              - insurance
+              - media
+              - manufacturing
+              - music
+              - mining
+              - petroleum
+              - real_estate
+              - software
+              - tourism
+              - transport
+              - telecommunication
+              - other
+              type: string
+            name:
+              description: Company name
+              example: Acme Inc
+              maximum: 256
+              minimum: 1
+              type: string
+            numberOfEmployees:
+              description: Company number of employees
+              example: 20
+              type: integer
+            phoneNumber:
+              description: Company phone number
+              example: '56912345678'
+              type: string
+            website:
+              description: Company website
+              example: https://acme.com
+              pattern: "^(https?:\\/\\/)?(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
+              type: string
+          type: object
+        contacted:
+          description: Contact contacted?
+          type: boolean
+        custom:
+          additionalProperties: true
+          description: Custom fields
+          example:
+            cf_age_number: 30
+            cf_name_text: Mark Johnson
+          type: object
+        notes:
+          description: Contact notes
+          example: Note
+          maximum: 4000
+          minimum: 1
+          type: string
+        personal:
+          description: Personal information
+          properties:
+            address:
+              description: Address street and number
+              example: 1234 Street
+              maximum: 256
+              minimum: 1
+              type: string
+            birthDay:
+              description: Contact birthday
+              example: 28
+              maximum: 31
+              minimum: 1
+              type: integer
+            birthMonth:
+              description: Contact birth month
+              example: 2
+              maximum: 12
+              minimum: 1
+              type: integer
+            birthYear:
+              description: Contact year of birth
+              example: 1998
+              maximum: 9999
+              minimum: 0
+              type: integer
+            city:
+              description: Address city name
+              example: City
+              maximum: 100
+              minimum: 1
+              type: string
+            country:
+              description: Address country name
+              example: USA
+              maximum: 256
+              minimum: 1
+              type: string
+            email:
+              description: Contact main email
+              example: contact@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            facebook:
+              description: Facebook user name or profile url
+              example: https://www.facebook.com/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            firstName:
+              description: Contact first name
+              example: Monica
+              maximum: 100
+              minimum: 1
+              type: string
+            instagram:
+              description: Instagram user name or profile url
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+            jobTitle:
+              description: Contact job title
+              example: Project Manager
+              maximum: 256
+              minimum: 1
+              type: string
+            lastName:
+              description: Contact last name
+              example: Geller
+              maximum: 100
+              minimum: 1
+              type: string
+            linkedIn:
+              description: LinkedIn user name or profile url
+              example: https://www.linkedin.com/in/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            phoneNumber:
+              description: Contact main phone number
+              example: '56912345678'
+              maximum: 256
+              minimum: 1
+              type: string
+            region:
+              description: Address region/province name
+              example: Region
+              maximum: 100
+              minimum: 1
+              type: string
+            secondaryPhoneNumber:
+              description: Contact secondary phone number
+              example: '56912345670'
+              maximum: 256
+              minimum: 1
+              type: string
+            state:
+              description: Address state name
+              example: State
+              maximum: 100
+              minimum: 1
+              type: string
+            twitter:
+              description: Twitter user name or profile link
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+          type: object
+        priority:
+          description: Contact priority
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          type: integer
+        source:
+          description: Contact source
+          enum:
+          - referrer
+          - other
+          type: string
+        status:
+          default: lead
+          description: Contact status
+          enum:
+          - lead
+          - client
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+      type: object
+    CreateTagRequest:
+      description: Tag information
+      properties:
+        category:
+          default: CONTACT
+          description: Tag category
+          enum:
+          - CONTACT
+          type: string
+        name:
+          description: Tag name
+          maximum: 256
+          minimum: 1
+          pattern: "^[a-zA-Z]{1}[0-9a-zA-Z_-]{2,255}$"
+          type: string
+      required:
+      - name
+      type: object
+    CreateTaskRequest:
+      description: Task information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Task owner email.
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        contactId:
+          description: Related contact ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        dealId:
+          description: Related deal ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        description:
+          description: Task description
+          maximum: 4000
+          minimum: 1
+          type: string
+        startAt:
+          description: Task start date (yyyy-MM-ddThh:mm:ss)
+          pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+          type: string
+        status:
+          default: pending
+          description: Task status
+          enum:
+          - pending
+          - completed
+          type: string
+        title:
+          description: Task title
+          maximum: 256
+          minimum: 1
+          type: string
+      required:
+      - title
+      - startAt
+      - contactId
+      type: object
+    EntityActivityResponse:
+      properties:
+        entity:
+          description: Activity information
+          properties:
+            assignedTo:
+              default: unassigned
+              description: Activity owner email
+              pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+              type: string
+            contact:
+              description: Related contact information
+              properties:
+                email:
+                  description: Contact email
+                  type: string
+                firstName:
+                  description: Contact first name
+                  type: string
+                id:
+                  description: Contact ID
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                lastName:
+                  description: Contact last name
+                  type: string
+                phoneNumber:
+                  description: Contact phone number
+                  type: string
+              type: object
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            dealId:
+              description: Related deal ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            description:
+              description: Activity description
+              maximum: 4000
+              minimum: 1
+              type: string
+            duration:
+              description: Activity duration in minutes
+              maximum: 240
+              minimum: 15
+              type: integer
+            endAt:
+              description: Activity end date (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            id:
+              description: Activity ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            modified:
+              description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            startAt:
+              description: Activity start date (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            status:
+              default: pending
+              description: Activity status
+              enum:
+              - pending
+              - completed
+              - discarded
+              type: string
+            title:
+              description: Activity title
+              maximum: 256
+              minimum: 1
+              type: string
+            type:
+              description: Activity type
+              enum:
+              - event
+              - webinar
+              - meeting
+              - call
+              - other
+              type: string
+          type: object
+    EntityContactResponse:
+      properties:
+        entity:
+          description: Contact information
+          properties:
+            assignedTo:
+              default: unassigned
+              description: Contact owner email
+              example: unassigned
+              pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+              type: string
+            company:
+              description: Company information
+              properties:
+                annualRevenue:
+                  description: Company annual revenue
+                  example: 10000000
+                  type: integer
+                email:
+                  description: Company email
+                  example: company@email.com
+                  pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                  type: string
+                industryType:
+                  description: Company industry type
+                  enum:
+                  - agriculture
+                  - construction
+                  - education
+                  - entertainment
+                  - energy
+                  - electronics
+                  - financial
+                  - food
+                  - film
+                  - government
+                  - health
+                  - insurance
+                  - media
+                  - manufacturing
+                  - music
+                  - mining
+                  - petroleum
+                  - real_estate
+                  - software
+                  - tourism
+                  - transport
+                  - telecommunication
+                  - other
+                  type: string
+                name:
+                  description: Company name
+                  example: Acme Inc
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                numberOfEmployees:
+                  description: Company number of employees
+                  example: 20
+                  type: integer
+                phoneNumber:
+                  description: Company phone number
+                  example: '56912345678'
+                  type: string
+                website:
+                  description: Company website
+                  example: https://acme.com
+                  pattern: "^(https?:\\/\\/)?(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
+                  type: string
+              type: object
+            contacted:
+              description: Contact contacted?
+              type: boolean
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            custom:
+              additionalProperties: true
+              description: Custom fields
+              example:
+                cf_age_number: 30
+                cf_name_text: Mark Johnson
+              type: object
+            id:
+              description: Contact ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            marketable:
+              description: Is the contact marketable?
+              type: boolean
+            modified:
+              description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            notes:
+              description: Contact notes
+              example: Note
+              maximum: 4000
+              minimum: 1
+              type: string
+            personal:
+              description: Personal information
+              properties:
+                address:
+                  description: Address street and number
+                  example: 1234 Street
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                birthDay:
+                  description: Contact birthday
+                  example: 28
+                  maximum: 31
+                  minimum: 1
+                  type: integer
+                birthMonth:
+                  description: Contact birth month
+                  example: 2
+                  maximum: 12
+                  minimum: 1
+                  type: integer
+                birthYear:
+                  description: Contact year of birth
+                  example: 1998
+                  maximum: 9999
+                  minimum: 0
+                  type: integer
+                city:
+                  description: Address city name
+                  example: City
+                  maximum: 100
+                  minimum: 1
+                  type: string
+                country:
+                  description: Address country name
+                  example: USA
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                email:
+                  description: Contact main email
+                  example: contact@email.com
+                  pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                  type: string
+                facebook:
+                  description: Facebook user name or profile url
+                  example: https://www.facebook.com/user_name
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                firstName:
+                  description: Contact first name
+                  example: Monica
+                  maximum: 100
+                  minimum: 1
+                  type: string
+                instagram:
+                  description: Instagram user name or profile url
+                  example: "@user_name"
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                jobTitle:
+                  description: Contact job title
+                  example: Project Manager
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                lastName:
+                  description: Contact last name
+                  example: Geller
+                  maximum: 100
+                  minimum: 1
+                  type: string
+                linkedIn:
+                  description: LinkedIn user name or profile url
+                  example: https://www.linkedin.com/in/user_name
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                phoneNumber:
+                  description: Contact main phone number
+                  example: '56912345678'
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                region:
+                  description: Address region/province name
+                  example: Region
+                  maximum: 100
+                  minimum: 1
+                  type: string
+                secondaryPhoneNumber:
+                  description: Contact secondary phone number
+                  example: '56912345670'
+                  maximum: 256
+                  minimum: 1
+                  type: string
+                state:
+                  description: Address state name
+                  example: State
+                  maximum: 100
+                  minimum: 1
+                  type: string
+                twitter:
+                  description: Twitter user name or profile link
+                  example: "@user_name"
+                  maximum: 256
+                  minimum: 1
+                  type: string
+              type: object
+            priority:
+              description: Contact priority
+              enum:
+              - 0
+              - 1
+              - 2
+              - 3
+              type: integer
+            source:
+              description: Contact source
+              enum:
+              - referrer
+              - other
+              type: string
+            status:
+              default: lead
+              description: Contact status
+              enum:
+              - lead
+              - client
+              type: string
+            tags:
+              items:
+                description: Tag ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              type: array
+          type: object
+    EntityCreatedResponse:
+      properties:
+        id:
+          description: Entity id
+          type: string
+        message:
+          description: Feedback message
+          type: string
+    EntityCustomFieldResponse:
+      properties:
+        entity:
+          description: Custom field information
+          properties:
+            format:
+              description: Field format, useful for date/time field types.
+              type: string
+            internalName:
+              description: Field internal name. This is used to set the value in the
+                contact
+              type: string
+            name:
+              description: Field name
+              type: string
+            options:
+              description: Possible options for dropdown and multi select field types.
+              items:
+                type: string
+              type: array
+            required:
+              description: Field required?
+              type: boolean
+            type:
+              description: Field type
+              enum:
+              - text
+              - large_text
+              - dropdown
+              - date
+              - time
+              - datetime
+              - number
+              - decimal
+              - email
+              - file
+              - multi_select
+              type: string
+          type: object
+    EntityDealResponse:
+      properties:
+        entity:
+          description: Deal information
+          properties:
+            assignedTo:
+              default: unassigned
+              description: Deal owner
+              pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+              type: string
+            contact:
+              description: Related contact
+              properties:
+                email:
+                  description: Contact email
+                  pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                  type: string
+                firstName:
+                  description: Contact first name
+                  type: string
+                id:
+                  description: Contact ID
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                lastName:
+                  description: Contact last name
+                  type: string
+                phone:
+                  description: Contact phone number
+                  pattern: "^([+(\\d]{1})(([\\d+() -.]){5,20})([+(\\d]{1})$"
+                  type: string
+              type: object
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            description:
+              description: Deal description
+              maximum: 4000
+              minimum: 0
+              type: string
+            funnelId:
+              description: Related funnel ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            id:
+              description: Deal ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            modified:
+              description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            name:
+              description: Deal name
+              maximum: 256
+              minimum: 1
+              type: string
+            pipeline:
+              description: Related pipeline
+              properties:
+                id:
+                  description: Pipeline ID
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                name:
+                  description: Pipeline name
+                  type: string
+                stageId:
+                  description: Stage ID
+                  pattern: "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^(prospect|connected|qualified|proposed|won|lost)$)"
+                  type: string
+                stageType:
+                  description: Stage type
+                  enum:
+                  - open
+                  - won
+                  - lost
+                  type: string
+              type: object
+            priority:
+              description: Deal priority
+              enum:
+              - 0
+              - 1
+              - 2
+              - 3
+              type: number
+            productId:
+              description: Related product ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            value:
+              description: Deal amount value
+              type: number
+          type: object
+    EntityDeletedResponse:
+      properties:
+        id:
+          description: Entity id
+          type: string
+        message:
+          description: Feedback message
+          type: string
+    EntityTagResponse:
+      properties:
+        entity:
+          description: Tag information
+          properties:
+            category:
+              default: CONTACT
+              description: Tag category
+              enum:
+              - CONTACT
+              type: string
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            id:
+              description: Tag ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            name:
+              description: Tag name
+              maximum: 256
+              minimum: 1
+              pattern: "^[a-zA-Z]{1}[0-9a-zA-Z_-]{2,255}$"
+              type: string
+          type: object
+    EntityTaskResponse:
+      properties:
+        entity:
+          description: Task information
+          properties:
+            assignedTo:
+              default: unassigned
+              description: Task owner email.
+              pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+              type: string
+            contact:
+              description: Related contact information
+              properties:
+                email:
+                  description: Contact email
+                  type: string
+                firstName:
+                  description: Contact first name
+                  type: string
+                id:
+                  description: Contact ID
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                lastName:
+                  description: Contact last name
+                  type: string
+                phoneNumber:
+                  description: Contact phone number
+                  type: string
+              type: object
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            dealId:
+              description: Related deal ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            description:
+              description: Task description
+              maximum: 4000
+              minimum: 1
+              type: string
+            id:
+              description: Task ID
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            modified:
+              description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            startAt:
+              description: Task start date (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            status:
+              default: pending
+              description: Task status
+              enum:
+              - pending
+              - completed
+              - discarded
+              type: string
+            title:
+              description: Task title
+              maximum: 256
+              minimum: 1
+              type: string
+          type: object
+    EntityUpdatedResponse:
+      properties:
+        id:
+          description: Entity id
+          type: string
+        message:
+          description: Feedback message
+          type: string
+    ErrorResponse:
+      properties:
+        error:
+          description: Error description
+          type: string
+        errors:
+          description: List of errors messages
           items:
             type: string
-          description: The list of todos.
-    addTodoRequest:
-      type: object
-      required:
-      - todo
+          type: array
+    ResourceNotFound:
       properties:
-        todo:
+        error:
+          description: Error description
           type: string
-          description: The todo to add to the list.
-          required: true
-    deleteTodoRequest:
-      type: object
-      required:
-      - todo_idx
+    SearchActivityResponse:
       properties:
-        todo_idx:
+        items:
+          items:
+            description: Activity information
+            properties:
+              assignedTo:
+                default: unassigned
+                description: Activity owner email
+                pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+                type: string
+              contact:
+                description: Related contact information
+                properties:
+                  email:
+                    description: Contact email
+                    type: string
+                  firstName:
+                    description: Contact first name
+                    type: string
+                  id:
+                    description: Contact ID
+                    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    type: string
+                  lastName:
+                    description: Contact last name
+                    type: string
+                  phoneNumber:
+                    description: Contact phone number
+                    type: string
+                type: object
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              dealId:
+                description: Related deal ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              description:
+                description: Activity description
+                maximum: 4000
+                minimum: 1
+                type: string
+              duration:
+                description: Activity duration in minutes
+                maximum: 240
+                minimum: 15
+                type: integer
+              endAt:
+                description: Activity end date (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              id:
+                description: Activity ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              modified:
+                description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              startAt:
+                description: Activity start date (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              status:
+                default: pending
+                description: Activity status
+                enum:
+                - pending
+                - completed
+                - discarded
+                type: string
+              title:
+                description: Activity title
+                maximum: 256
+                minimum: 1
+                type: string
+              type:
+                description: Activity type
+                enum:
+                - event
+                - webinar
+                - meeting
+                - call
+                - other
+                type: string
+            type: object
+          type: array
+        message:
+          type: string
+        page:
           type: integer
-          description: The index of the todo to delete.
-          required: true
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchContactResponse:
+      properties:
+        items:
+          items:
+            description: Contact information
+            properties:
+              assignedTo:
+                default: unassigned
+                description: Contact owner email
+                example: unassigned
+                pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+                type: string
+              company:
+                description: Company information
+                properties:
+                  annualRevenue:
+                    description: Company annual revenue
+                    example: 10000000
+                    type: integer
+                  email:
+                    description: Company email
+                    example: company@email.com
+                    pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                    type: string
+                  industryType:
+                    description: Company industry type
+                    enum:
+                    - agriculture
+                    - construction
+                    - education
+                    - entertainment
+                    - energy
+                    - electronics
+                    - financial
+                    - food
+                    - film
+                    - government
+                    - health
+                    - insurance
+                    - media
+                    - manufacturing
+                    - music
+                    - mining
+                    - petroleum
+                    - real_estate
+                    - software
+                    - tourism
+                    - transport
+                    - telecommunication
+                    - other
+                    type: string
+                  name:
+                    description: Company name
+                    example: Acme Inc
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  numberOfEmployees:
+                    description: Company number of employees
+                    example: 20
+                    type: integer
+                  phoneNumber:
+                    description: Company phone number
+                    example: '56912345678'
+                    type: string
+                  website:
+                    description: Company website
+                    example: https://acme.com
+                    pattern: "^(https?:\\/\\/)?(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
+                    type: string
+                type: object
+              contacted:
+                description: Contact contacted?
+                type: boolean
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              custom:
+                additionalProperties: true
+                description: Custom fields
+                example:
+                  cf_age_number: 30
+                  cf_name_text: Mark Johnson
+                type: object
+              id:
+                description: Contact ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              marketable:
+                description: Is the contact marketable?
+                type: boolean
+              modified:
+                description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              notes:
+                description: Contact notes
+                example: Note
+                maximum: 4000
+                minimum: 1
+                type: string
+              personal:
+                description: Personal information
+                properties:
+                  address:
+                    description: Address street and number
+                    example: 1234 Street
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  birthDay:
+                    description: Contact birthday
+                    example: 28
+                    maximum: 31
+                    minimum: 1
+                    type: integer
+                  birthMonth:
+                    description: Contact birth month
+                    example: 2
+                    maximum: 12
+                    minimum: 1
+                    type: integer
+                  birthYear:
+                    description: Contact year of birth
+                    example: 1998
+                    maximum: 9999
+                    minimum: 0
+                    type: integer
+                  city:
+                    description: Address city name
+                    example: City
+                    maximum: 100
+                    minimum: 1
+                    type: string
+                  country:
+                    description: Address country name
+                    example: USA
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  email:
+                    description: Contact main email
+                    example: contact@email.com
+                    pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                    type: string
+                  facebook:
+                    description: Facebook user name or profile url
+                    example: https://www.facebook.com/user_name
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  firstName:
+                    description: Contact first name
+                    example: Monica
+                    maximum: 100
+                    minimum: 1
+                    type: string
+                  instagram:
+                    description: Instagram user name or profile url
+                    example: "@user_name"
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  jobTitle:
+                    description: Contact job title
+                    example: Project Manager
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  lastName:
+                    description: Contact last name
+                    example: Geller
+                    maximum: 100
+                    minimum: 1
+                    type: string
+                  linkedIn:
+                    description: LinkedIn user name or profile url
+                    example: https://www.linkedin.com/in/user_name
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  phoneNumber:
+                    description: Contact main phone number
+                    example: '56912345678'
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  region:
+                    description: Address region/province name
+                    example: Region
+                    maximum: 100
+                    minimum: 1
+                    type: string
+                  secondaryPhoneNumber:
+                    description: Contact secondary phone number
+                    example: '56912345670'
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                  state:
+                    description: Address state name
+                    example: State
+                    maximum: 100
+                    minimum: 1
+                    type: string
+                  twitter:
+                    description: Twitter user name or profile link
+                    example: "@user_name"
+                    maximum: 256
+                    minimum: 1
+                    type: string
+                type: object
+              priority:
+                description: Contact priority
+                enum:
+                - 0
+                - 1
+                - 2
+                - 3
+                type: integer
+              source:
+                description: Contact source
+                enum:
+                - referrer
+                - other
+                type: string
+              status:
+                default: lead
+                description: Contact status
+                enum:
+                - lead
+                - client
+                type: string
+              tags:
+                items:
+                  description: Tag ID
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                type: array
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchCustomFieldResponse:
+      properties:
+        items:
+          items:
+            description: Custom field information
+            properties:
+              format:
+                description: Field format, useful for date/time field types.
+                type: string
+              internalName:
+                description: Field internal name. This is used to set the value in
+                  the contact
+                type: string
+              name:
+                description: Field name
+                type: string
+              options:
+                description: Possible options for dropdown and multi select field
+                  types.
+                items:
+                  type: string
+                type: array
+              required:
+                description: Field required?
+                type: boolean
+              type:
+                description: Field type
+                enum:
+                - text
+                - large_text
+                - dropdown
+                - date
+                - time
+                - datetime
+                - number
+                - decimal
+                - email
+                - file
+                - multi_select
+                type: string
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchDealResponse:
+      properties:
+        items:
+          items:
+            description: Deal information
+            properties:
+              assignedTo:
+                default: unassigned
+                description: Deal owner
+                pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+                type: string
+              contact:
+                description: Related contact
+                properties:
+                  email:
+                    description: Contact email
+                    pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                    type: string
+                  firstName:
+                    description: Contact first name
+                    type: string
+                  id:
+                    description: Contact ID
+                    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    type: string
+                  lastName:
+                    description: Contact last name
+                    type: string
+                  phone:
+                    description: Contact phone number
+                    pattern: "^([+(\\d]{1})(([\\d+() -.]){5,20})([+(\\d]{1})$"
+                    type: string
+                type: object
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              description:
+                description: Deal description
+                maximum: 4000
+                minimum: 0
+                type: string
+              funnelId:
+                description: Related funnel ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              id:
+                description: Deal ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              modified:
+                description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              name:
+                description: Deal name
+                maximum: 256
+                minimum: 1
+                type: string
+              pipeline:
+                description: Related pipeline
+                properties:
+                  id:
+                    description: Pipeline ID
+                    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    type: string
+                  name:
+                    description: Pipeline name
+                    type: string
+                  stageId:
+                    description: Stage ID
+                    pattern: "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^(prospect|connected|qualified|proposed|won|lost)$)"
+                    type: string
+                  stageType:
+                    description: Stage type
+                    enum:
+                    - open
+                    - won
+                    - lost
+                    type: string
+                type: object
+              priority:
+                description: Deal priority
+                enum:
+                - 0
+                - 1
+                - 2
+                - 3
+                type: number
+              productId:
+                description: Related product ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              value:
+                description: Deal amount value
+                type: number
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchPipelineResponse:
+      properties:
+        items:
+          items:
+            description: Pipeline information
+            properties:
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              default:
+                description: True if the pipeline is the default pipeline
+                type: boolean
+              id:
+                description: Pipeline ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              modified:
+                description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              name:
+                description: Pipeline name
+                type: string
+              stages:
+                description: Pipeline stages
+                items:
+                  properties:
+                    color:
+                      description: Stage color code in hexadecimal format
+                      example: "#ffffff"
+                      type: string
+                    id:
+                      description: Stage ID
+                      pattern: "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^(prospect|connected|qualified|proposed|won|lost)$)"
+                      type: string
+                    name:
+                      description: Stage name
+                      type: string
+                    type:
+                      description: Stage type
+                      enum:
+                      - open
+                      - won
+                      - lost
+                      type: string
+                  type: object
+                type: array
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchTagResponse:
+      properties:
+        items:
+          items:
+            description: Tag information
+            properties:
+              category:
+                default: CONTACT
+                description: Tag category
+                enum:
+                - CONTACT
+                type: string
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              id:
+                description: Tag ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              name:
+                description: Tag name
+                maximum: 256
+                minimum: 1
+                pattern: "^[a-zA-Z]{1}[0-9a-zA-Z_-]{2,255}$"
+                type: string
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    SearchTaskResponse:
+      properties:
+        items:
+          items:
+            description: Task information
+            properties:
+              assignedTo:
+                default: unassigned
+                description: Task owner email.
+                pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+                type: string
+              contact:
+                description: Related contact information
+                properties:
+                  email:
+                    description: Contact email
+                    type: string
+                  firstName:
+                    description: Contact first name
+                    type: string
+                  id:
+                    description: Contact ID
+                    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    type: string
+                  lastName:
+                    description: Contact last name
+                    type: string
+                  phoneNumber:
+                    description: Contact phone number
+                    type: string
+                type: object
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              dealId:
+                description: Related deal ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              description:
+                description: Task description
+                maximum: 4000
+                minimum: 1
+                type: string
+              id:
+                description: Task ID
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              modified:
+                description: Modification date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              startAt:
+                description: Task start date (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              status:
+                default: pending
+                description: Task status
+                enum:
+                - pending
+                - completed
+                - discarded
+                type: string
+              title:
+                description: Task title
+                maximum: 256
+                minimum: 1
+                type: string
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+    UpdateContactRequest:
+      description: Contact information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Contact owner email
+          example: unassigned
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        company:
+          description: Company information
+          properties:
+            annualRevenue:
+              description: Company annual revenue
+              example: 10000000
+              type: integer
+            email:
+              description: Company email
+              example: company@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            industryType:
+              description: Company industry type
+              enum:
+              - agriculture
+              - construction
+              - education
+              - entertainment
+              - energy
+              - electronics
+              - financial
+              - food
+              - film
+              - government
+              - health
+              - insurance
+              - media
+              - manufacturing
+              - music
+              - mining
+              - petroleum
+              - real_estate
+              - software
+              - tourism
+              - transport
+              - telecommunication
+              - other
+              type: string
+            name:
+              description: Company name
+              example: Acme Inc
+              maximum: 256
+              minimum: 1
+              type: string
+            numberOfEmployees:
+              description: Company number of employees
+              example: 20
+              type: integer
+            phoneNumber:
+              description: Company phone number
+              example: '56912345678'
+              type: string
+            website:
+              description: Company website
+              example: https://acme.com
+              pattern: "^(https?:\\/\\/)?(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
+              type: string
+          type: object
+        contacted:
+          description: Contact contacted?
+          type: boolean
+        custom:
+          additionalProperties: true
+          description: Custom fields
+          example:
+            cf_age_number: 30
+            cf_name_text: Mark Johnson
+          type: object
+        notes:
+          description: Contact notes
+          example: Note
+          maximum: 4000
+          minimum: 1
+          type: string
+        personal:
+          description: Personal information
+          properties:
+            address:
+              description: Address street and number
+              example: 1234 Street
+              maximum: 256
+              minimum: 1
+              type: string
+            birthDay:
+              description: Contact birthday
+              example: 28
+              maximum: 31
+              minimum: 1
+              type: integer
+            birthMonth:
+              description: Contact birth month
+              example: 2
+              maximum: 12
+              minimum: 1
+              type: integer
+            birthYear:
+              description: Contact year of birth
+              example: 1998
+              maximum: 9999
+              minimum: 0
+              type: integer
+            city:
+              description: Address city name
+              example: City
+              maximum: 100
+              minimum: 1
+              type: string
+            country:
+              description: Address country name
+              example: USA
+              maximum: 256
+              minimum: 1
+              type: string
+            email:
+              description: Contact main email
+              example: contact@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            facebook:
+              description: Facebook user name or profile url
+              example: https://www.facebook.com/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            firstName:
+              description: Contact first name
+              example: Monica
+              maximum: 100
+              minimum: 1
+              type: string
+            instagram:
+              description: Instagram user name or profile url
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+            jobTitle:
+              description: Contact job title
+              example: Project Manager
+              maximum: 256
+              minimum: 1
+              type: string
+            lastName:
+              description: Contact last name
+              example: Geller
+              maximum: 100
+              minimum: 1
+              type: string
+            linkedIn:
+              description: LinkedIn user name or profile url
+              example: https://www.linkedin.com/in/user_name
+              maximum: 256
+              minimum: 1
+              type: string
+            phoneNumber:
+              description: Contact main phone number
+              example: '56912345678'
+              maximum: 256
+              minimum: 1
+              type: string
+            region:
+              description: Address region/province name
+              example: Region
+              maximum: 100
+              minimum: 1
+              type: string
+            secondaryPhoneNumber:
+              description: Contact secondary phone number
+              example: '56912345670'
+              maximum: 256
+              minimum: 1
+              type: string
+            state:
+              description: Address state name
+              example: State
+              maximum: 100
+              minimum: 1
+              type: string
+            twitter:
+              description: Twitter user name or profile link
+              example: "@user_name"
+              maximum: 256
+              minimum: 1
+              type: string
+          type: object
+        priority:
+          description: Contact priority
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          type: integer
+        source:
+          description: Contact source
+          enum:
+          - referrer
+          - other
+          type: string
+        status:
+          default: lead
+          description: Contact status
+          enum:
+          - lead
+          - client
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+      type: object
+    UpdateContactTagsRequest:
+      properties:
+        addTags:
+          description: List of tag IDs to add
+          items:
+            pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            type: string
+          type: array
+        removeTags:
+          description: List of tag IDs to remove
+          items:
+            pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            type: string
+          type: array
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+    UpdateDealRequest:
+      description: Deal information
+      properties:
+        assignedTo:
+          default: unassigned
+          description: Deal owner
+          pattern: "(^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$)|(^unassigned$)"
+          type: string
+        description:
+          description: Deal description
+          maximum: 4000
+          minimum: 0
+          type: string
+        funnelId:
+          description: Related funnel ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        name:
+          description: Deal name
+          maximum: 256
+          minimum: 1
+          type: string
+        priority:
+          description: Deal priority
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          type: number
+        productId:
+          description: Related product ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+        value:
+          description: Deal amount value
+          type: number
+      type: object
+    UpdateDealStageRequest:
+      description: Deal information
+      properties:
+        description:
+          description: Deal description
+          maximum: 4000
+          minimum: 0
+          type: string
+        pipelineId:
+          description: Related pipeline ID
+          pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          type: string
+        stageId:
+          description: Related stage ID
+          pattern: "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^(prospect|connected|qualified|proposed|won|lost)$)"
+          type: string
+        triggerWorkflow:
+          default: false
+          description: By default no workflow will be triggered for this operation.
+            To trigger workflow associated, pass this parameter with *true*.
+          type: boolean
+      required:
+      - pipelineId
+      - stageId
+      type: object
+    EntityUserResponse:
+      properties:
+        entity:
+          description: User information
+          properties:
+            created:
+              description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            email:
+              description: User email
+              example: user@email.com
+              pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+              type: string
+            firstName:
+              description: User first name
+              example: Manuel
+              type: string
+            id:
+              description: User identifier
+              example: 6211b5b1-1c10-467f-9bab-088bf669dd3b
+              pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              type: string
+            lastLogin:
+              description: Last time the user logged in (yyyy-MM-ddThh:mm:ss)
+              pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+              type: string
+            lastName:
+              description: User last name
+              example: Castellanos
+              type: string
+            role:
+              description: Related role information
+              properties:
+                id:
+                  description: Role identifier
+                  example: 9c55509c-a1ee-4d50-85a4-409d3d2b789e
+                  pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                  type: string
+                type:
+                  description: Role type
+                  enum:
+                  - admin
+                  - seller
+                  - editor
+                  type: string
+              type: object
+          type: object
+    SearchUserResponse:
+      properties:
+        items:
+          items:
+            description: User information
+            properties:
+              created:
+                description: Creation date (UTC) (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              email:
+                description: User email
+                example: user@email.com
+                pattern: "^[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9-A-ZÀ-ÿ!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])?\\.)+[a-z0-9-A-Z](?:[a-z0-9-A-Z]*[a-z0-9-A-Z])+$"
+                type: string
+              firstName:
+                description: User first name
+                example: Manuel
+                type: string
+              id:
+                description: User identifier
+                example: 6211b5b1-1c10-467f-9bab-088bf669dd3b
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                type: string
+              lastLogin:
+                description: Last time the user logged in (yyyy-MM-ddThh:mm:ss)
+                pattern: "^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T([0-5][0-9])\\:([0-5][0-9])\\:([0-5][0-9])$"
+                type: string
+              lastName:
+                description: User last name
+                example: Castellanos
+                type: string
+              role:
+                description: Related role information
+                properties:
+                  id:
+                    description: Role identifier
+                    example: 9c55509c-a1ee-4d50-85a4-409d3d2b789e
+                    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                    type: string
+                  type:
+                    description: Role type
+                    enum:
+                    - admin
+                    - seller
+                    - editor
+                    type: string
+                type: object
+            type: object
+          type: array
+        message:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
