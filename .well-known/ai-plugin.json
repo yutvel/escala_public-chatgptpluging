@@ -2,8 +2,8 @@
     "schema_version": "v1",
     "name_for_human": "Escala Plugin for API Public",
     "name_for_model": "escala_public_api",
-    "description_for_human": "Plugin for managing a TODO list, you can add, remove and view your TODOs.",
-    "description_for_model": "Plugin for managing a TODO list, you can add, remove and view your TODOs.",
+    "description_for_human": "Plugin for Escala Public API, you can add, remove and view your contacts, deals, oportunities",
+    "description_for_model": "Plugin for Escala Public API, you can add, remove and view your contacts, deals, oportunities",
     "auth": {
       "type": "none"
     },
