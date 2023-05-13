@@ -1,6 +1,6 @@
-# ChatGPT plugins quickstart
+# Escala Public API ChatGPT plugin
 
-Get a todo list ChatGPT plugin up and running in under 5 minutes using Python. If you do not already have plugin developer access, please [join the waitlist](https://openai.com/waitlist/plugins).
+Get a interface NLP for escala public API, ChatGPT plugin. 
 
 ## Setup
 
